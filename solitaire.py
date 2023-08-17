@@ -23,6 +23,10 @@ SCREEN_TITLE = "Tux Solitaire"
 CARD_VALUES = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"]
 CARD_SUITS = ["Clubs", "Hearts", "Spades", "Diamonds"]
 
+# Connection to Spritesheet
+#card_sprite_sheet = arcade.load_spritesheet("/static/cardspritesheet.png", rows=4, cols=13)
+
+
 # Class for the main Program
 class kalisol(arcade.Window):
     def __init__(self):
@@ -34,7 +38,6 @@ class kalisol(arcade.Window):
         # Sets variables of held cards and their original location to nothing and establishes
         self.held_cards = None
         self.held_cards_og_position = None
-
         
     # Sets up game, Call to restart
     def setup(self):
@@ -45,10 +48,16 @@ class kalisol(arcade.Window):
         self.held_cards_og_position = []
 
         # Create Each Card
-        for card_suit in CARD_SUITS:
-            for card_value in CARD_VALUES:
-                card = Card(card_suit, card_value, CARD_SCALE)
-                card.position = START_X, BOTTOM_Y
+        #for card_suit in CARD_SUITS:
+         #   for card_value in CARD_VALUES:
+          #      card = Card(card_suit, card_value, CARD_SCALE)
+           #     card.position = START_X, BOTTOM_Y
+            #    self.card_list.append(card)
+        card_sprite_sheet = arcade.load_spritesheet("/static/cardlist.png", rows=1, cols=13)
+        for suit_index, suit in enumerate(CARD_SUITS):
+            for value_index, value in enumerate(CARD_VALUES):
+                card_sprite = card_sprite_sheet[suit_index][value_index]
+                card = Card(suit, value, card_sprite)
                 self.card_list.append(card)
 
     def pull_to_top(self, card: arcade.Sprite):
