@@ -1,7 +1,7 @@
 import arcade
 
 # Constants for sizing of cards
-CARD_SCALE = 5.0
+CARD_SCALE = 1.0
 CARD_WIDTH = 140 * CARD_SCALE
 CARD_HEIGHT = 190 * CARD_SCALE
 
