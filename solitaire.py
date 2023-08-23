@@ -1,7 +1,7 @@
 import arcade
 
 # Constants for sizing of cards
-CARD_SCALE = 1.0
+CARD_SCALE = 0.4
 CARD_WIDTH = 140 * CARD_SCALE
 CARD_HEIGHT = 190 * CARD_SCALE
 
@@ -47,18 +47,13 @@ class kalisol(arcade.Window):
         self.held_cards = []
         self.held_cards_og_position = []
 
-        # Create Each Card
-        #for card_suit in CARD_SUITS:
-         #   for card_value in CARD_VALUES:
-          #      card = Card(card_suit, card_value, CARD_SCALE)
-           #     card.position = START_X, BOTTOM_Y
-            #    self.card_list.append(card)
-        card_sprite_sheet = arcade.load_spritesheet("/static/cardlist.png", rows=1, cols=13)
-        for suit_index, suit in enumerate(CARD_SUITS):
-            for value_index, value in enumerate(CARD_VALUES):
-                card_sprite = card_sprite_sheet[suit_index][value_index]
-                card = Card(suit, value, card_sprite)
+        #   Create Each Card
+        for card_suit in CARD_SUITS:
+            for card_value in CARD_VALUES:
+                card = Card(card_suit, card_value, CARD_SCALE)
+                card.position = START_X, BOTTOM_Y
                 self.card_list.append(card)
+
 
     def pull_to_top(self, card: arcade.Sprite):
         # Puts card on top of rendering order (appears last -> on top of other objects)
