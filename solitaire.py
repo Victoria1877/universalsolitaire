@@ -1,30 +1,36 @@
 import arcade
 
-# Constants for sizing of cards
-CARD_SCALE = 0.4
-CARD_WIDTH = 140 * CARD_SCALE
-CARD_HEIGHT = 190 * CARD_SCALE
-
-# Constants for Sizing of mats for cards to be placed
-MAT_PERCENT_OVERSIZE = 1.25
-MAT_HEIGHT = int(CARD_HEIGHT * MAT_PERCENT_OVERSIZE)
-MAT_WIDTH = int(CARD_WIDTH * MAT_PERCENT_OVERSIZE)
-VERTICAL_MARGIN_PERCENT = 0.10
-HORIZONTAL_MARGIN_PERCENT = 0.10
-BOTTOM_Y = MAT_HEIGHT / 2 + MAT_HEIGHT * VERTICAL_MARGIN_PERCENT
-START_X = MAT_WIDTH / 2 + MAT_WIDTH * HORIZONTAL_MARGIN_PERCENT
-
 # Constants For Window Sizing
 SCREEN_WIDTH = 1024
 SCREEN_HEIGHT = 768
 SCREEN_TITLE = "Tux Solitaire"
 
+# Constants for sizing of cards
+CARD_SCALE = 2.5
+CARD_WIDTH = 140 * CARD_SCALE
+CARD_HEIGHT = 190 * CARD_SCALE
+
+# Constants for Sizing of mats for cards to be placed
+MAT_PERCENT_OVERSIZE = .35
+MAT_HEIGHT = int(CARD_HEIGHT * MAT_PERCENT_OVERSIZE)
+MAT_WIDTH = int(CARD_WIDTH * MAT_PERCENT_OVERSIZE)
+VERTICAL_MARGIN_PERCENT = 0.10
+HORIZONTAL_MARGIN_PERCENT = 0.10
+
+# Placement location of mats
+TOP_Y = SCREEN_HEIGHT - MAT_HEIGHT / 2 - MAT_HEIGHT * VERTICAL_MARGIN_PERCENT
+MIDDLE_Y = TOP_Y - MAT_HEIGHT - MAT_HEIGHT * VERTICAL_MARGIN_PERCENT
+MAT_SPACING = MAT_WIDTH + MAT_WIDTH * HORIZONTAL_MARGIN_PERCENT
+
+# Constants for Locations
+top_right_x = SCREEN_WIDTH - MAT_WIDTH / 2 - MAT_WIDTH * HORIZONTAL_MARGIN_PERCENT
+top_right_y = SCREEN_HEIGHT - MAT_HEIGHT / 2 - MAT_HEIGHT * VERTICAL_MARGIN_PERCENT
+BOTTOM_Y = MAT_HEIGHT / 2 + MAT_HEIGHT * VERTICAL_MARGIN_PERCENT
+START_X = MAT_WIDTH / 2 + MAT_WIDTH * HORIZONTAL_MARGIN_PERCENT
+
 # Card backend
 CARD_VALUES = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"]
 CARD_SUITS = ["Clubs", "Hearts", "Spades", "Diamonds"]
-
-# Connection to Spritesheet
-#card_sprite_sheet = arcade.load_spritesheet("/static/cardspritesheet.png", rows=4, cols=13)
 
 
 # Class for the main Program
@@ -33,27 +39,57 @@ class kalisol(arcade.Window):
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE, resizable=False)
         self.border_width = 5
 
+        # Sprite List for mats
+        self.pmat_list = None
         # Sprite list with all cards
         self.card_list = None
-        # Sets variables of held cards and their original location to nothing and establishes
+        # Sets variables of held card and original location to nothing and establishes
         self.held_cards = None
         self.held_cards_og_position = None
+
         
     # Sets up game, Call to restart
     def setup(self):
         self.card_list = arcade.SpriteList()
 
-        # Sets variables of held cards and their original location to null
-        self.held_cards = []
-        self.held_cards_og_position = []
+        # Sets variables of held card and original location to null
+        self.held_card = []
+        self.held_card_og_position = []
+
+        # Setup for card mats
+        self.pmat_list = arcade.SpriteList()
+
+        # Face Down mat
+        pile = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
+        pile.position = START_X, top_right_y
+        self.pmat_list.append(pile)
+
+        # Face Up mats
+        pile = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
+        pile.position = START_X + MAT_SPACING, top_right_y
+        self.pmat_list.append(pile)
+
+        # Seven active play mats
+        for i in range(7):
+            pile = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
+            pile.position = top_right_x - i * MAT_SPACING, MIDDLE_Y
+            self.pmat_list.append(pile)
+
+        # Win criteria top mats
+        for i in range(4):
+            pile = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
+            pile.position = top_right_x - i * MAT_SPACING, TOP_Y
+            self.pmat_list.append(pile)
+
+        # Sprite lists all cards regardless of pile
+        self.card_list = arcade.SpriteList()
 
         #   Create Each Card
         for card_suit in CARD_SUITS:
             for card_value in CARD_VALUES:
                 card = Card(card_suit, card_value, CARD_SCALE)
-                card.position = START_X, BOTTOM_Y
+                card.position = START_X, top_right_y
                 self.card_list.append(card)
-
 
     def pull_to_top(self, card: arcade.Sprite):
         # Puts card on top of rendering order (appears last -> on top of other objects)
@@ -76,6 +112,9 @@ class kalisol(arcade.Window):
             border_width=self.border_width  # Border width
         )
 
+        # Draw the Mats
+        self.pmat_list.draw()
+
         # Draw the Cards
         self.card_list.draw()
 
@@ -90,24 +129,24 @@ class kalisol(arcade.Window):
         if len(cards) > 0:
             # takes the top card, saves position, and Pulls to top
             primary_card = cards[-1]
-            self.held_cards = [primary_card]
-            self.held_cards_original_position = [self.held_cards[0].position]
-            self.pull_to_top(self.held_cards[0])
+            self.held_card = [primary_card]
+            self.held_card_og_position = [self.held_card[0].position]
+            self.pull_to_top(self.held_card[0])
 
 
     # When user clicks to release
     def on_mouse_release(self, x: float, y: float, button: int, modifiers: int):
         # ignores if no cards held
-        if len(self.held_cards) == 0:
+        if len(self.held_card) == 0:
             return
 
-        # Sets held cards to null
-        self.held_cards = []
+        # Sets held card to null
+        self.held_card = []
 
     # When user moves the mouse
     def on_mouse_motion(self, x: float, y: float, dx: float, dy: float):
-        # move held cards with the mouse
-        for card in self.held_cards:
+        # move held card with the mouse
+        for card in self.held_card:
             card.center_x += dx
             card.center_y += dy
 
