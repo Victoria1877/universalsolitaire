@@ -16,13 +16,17 @@ MAT_HEIGHT = int(CARD_HEIGHT * MAT_PERCENT_OVERSIZE)
 MAT_WIDTH = int(CARD_WIDTH * MAT_PERCENT_OVERSIZE)
 VERTICAL_MARGIN_PERCENT = 0.10
 HORIZONTAL_MARGIN_PERCENT = 0.10
-BOTTOM_Y = MAT_HEIGHT / 2 + MAT_HEIGHT * VERTICAL_MARGIN_PERCENT
-START_X = MAT_WIDTH / 2 + MAT_WIDTH * HORIZONTAL_MARGIN_PERCENT
 
 # Placement location of mats
 TOP_Y = SCREEN_HEIGHT - MAT_HEIGHT / 2 - MAT_HEIGHT * VERTICAL_MARGIN_PERCENT
 MIDDLE_Y = TOP_Y - MAT_HEIGHT - MAT_HEIGHT * VERTICAL_MARGIN_PERCENT
 MAT_SPACING = MAT_WIDTH + MAT_WIDTH * HORIZONTAL_MARGIN_PERCENT
+
+# Constants for Locations
+top_right_x = SCREEN_WIDTH - MAT_WIDTH / 2 - MAT_WIDTH * HORIZONTAL_MARGIN_PERCENT
+top_right_y = SCREEN_HEIGHT - MAT_HEIGHT / 2 - MAT_HEIGHT * VERTICAL_MARGIN_PERCENT
+BOTTOM_Y = MAT_HEIGHT / 2 + MAT_HEIGHT * VERTICAL_MARGIN_PERCENT
+START_X = MAT_WIDTH / 2 + MAT_WIDTH * HORIZONTAL_MARGIN_PERCENT
 
 # Card backend
 CARD_VALUES = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"]
@@ -35,13 +39,13 @@ class kalisol(arcade.Window):
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE, resizable=False)
         self.border_width = 5
 
+        # Sprite List for mats
+        self.pmat_list = None
         # Sprite list with all cards
         self.card_list = None
         # Sets variables of held card and original location to nothing and establishes
         self.held_cards = None
         self.held_cards_og_position = None
-        # Sprite List for mats
-        self.pmat_list = None
 
         
     # Sets up game, Call to restart
@@ -52,38 +56,40 @@ class kalisol(arcade.Window):
         self.held_card = []
         self.held_card_og_position = []
 
-        #   Create Each Card
-        for card_suit in CARD_SUITS:
-            for card_value in CARD_VALUES:
-                card = Card(card_suit, card_value, CARD_SCALE)
-                card.position = START_X, BOTTOM_Y
-                self.card_list.append(card)
-
         # Setup for card mats
         self.pmat_list = arcade.SpriteList()
 
         # Face Down mat
         pile = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
-        pile.position = START_X, BOTTOM_Y
+        pile.position = START_X, top_right_y
         self.pmat_list.append(pile)
 
         # Face Up mats
         pile = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
-        pile.position = START_X + MAT_SPACING, BOTTOM_Y
+        pile.position = START_X + MAT_SPACING, top_right_y
         self.pmat_list.append(pile)
 
         # Seven active play mats
         for i in range(7):
             pile = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
-            pile.position = START_X + i * MAT_SPACING, MIDDLE_Y
+            pile.position = top_right_x - i * MAT_SPACING, MIDDLE_Y
             self.pmat_list.append(pile)
 
         # Win criteria top mats
         for i in range(4):
             pile = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
-            pile.position = START_X + i * MAT_SPACING, TOP_Y
+            pile.position = top_right_x - i * MAT_SPACING, TOP_Y
             self.pmat_list.append(pile)
 
+        # Sprite lists all cards regardless of pile
+        self.card_list = arcade.SpriteList()
+
+        #   Create Each Card
+        for card_suit in CARD_SUITS:
+            for card_value in CARD_VALUES:
+                card = Card(card_suit, card_value, CARD_SCALE)
+                card.position = START_X, top_right_y
+                self.card_list.append(card)
 
     def pull_to_top(self, card: arcade.Sprite):
         # Puts card on top of rendering order (appears last -> on top of other objects)
@@ -123,9 +129,9 @@ class kalisol(arcade.Window):
         if len(cards) > 0:
             # takes the top card, saves position, and Pulls to top
             primary_card = cards[-1]
-            self.held_cards = [primary_card]
-            self.held_cards_original_position = [self.held_cards[0].position]
-            self.pull_to_top(self.held_cards[0])
+            self.held_card = [primary_card]
+            self.held_card_og_position = [self.held_card[0].position]
+            self.pull_to_top(self.held_card[0])
 
 
     # When user clicks to release
