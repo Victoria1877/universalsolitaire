@@ -1,4 +1,5 @@
 import arcade
+import random
 
 # Constants For Window Sizing
 SCREEN_WIDTH = 1024
@@ -21,6 +22,25 @@ HORIZONTAL_MARGIN_PERCENT = 0.10
 TOP_Y = SCREEN_HEIGHT - MAT_HEIGHT / 2 - MAT_HEIGHT * VERTICAL_MARGIN_PERCENT
 MIDDLE_Y = TOP_Y - MAT_HEIGHT - MAT_HEIGHT * VERTICAL_MARGIN_PERCENT
 MAT_SPACING = MAT_WIDTH + MAT_WIDTH * HORIZONTAL_MARGIN_PERCENT
+
+# Constants for making stacks on mats
+MAX_CARDS = 13
+BOTTOM_FACE_DOWN_PILE = 0
+BOTTOM_FACE_UP_PILE = 1
+STACK_PILE1 = 2
+STACK_PILE2 = 3
+STACK_PILE3 = 4
+STACK_PILE4 = 5
+STACK_PILE5 = 6
+STACK_PILE6 = 7
+STACK_PILE7 = 8
+WIN_PILE_1 = 9
+WIN_PILE_2 = 10
+WIN_PILE_3 = 11
+WIN_PILE_4 = 12
+
+# Distance of cards in stack
+CARD_VERTICAL_OFFSET = CARD_HEIGHT * CARD_SCALE * 0.3
 
 # Constants for Locations
 top_right_x = SCREEN_WIDTH - MAT_WIDTH / 2 - MAT_WIDTH * HORIZONTAL_MARGIN_PERCENT
@@ -45,7 +65,7 @@ class kalisol(arcade.Window):
         self.card_list = None
         # Sets variables of held card and original location to nothing and establishes
         self.held_cards = None
-        self.held_cards_og_position = None
+        self.held_card_og_position = None
 
         
     # Sets up game, Call to restart
@@ -68,6 +88,11 @@ class kalisol(arcade.Window):
         pile = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
         pile.position = START_X + MAT_SPACING, top_right_y
         self.pmat_list.append(pile)
+
+        # Shuffles the cards
+        for pos1 in range(len(self.card_list)):
+            pos2 = random.randrange(len(self.card_list))
+            self.card_list.swap(pos1, pos2)
 
         # Seven active play mats
         for i in range(7):
@@ -139,6 +164,21 @@ class kalisol(arcade.Window):
         # ignores if no cards held
         if len(self.held_card) == 0:
             return
+        
+        # Finds nearest pile and checks to see if they are touching
+        pile, distance = arcade.get_closest_sprite(self.held_card[0], self.pmat_list)
+        reset_position = True
+        if arcade.check_for_collision(self.held_card[0], pile):
+            # Move each held card to the centre of the pile
+            for x, dropped_card in enumerate(self.held_card):
+                dropped_card.position = pile.center_x, pile.center_y
+
+            reset_position = False
+
+        # Releases the cards and returns to og location if invalid placement
+        if reset_position:
+            for pile_index, card in enumerate(self.held_card):
+                card.position = self.held_card_og_position[pile_index]
 
         # Sets held card to null
         self.held_card = []
