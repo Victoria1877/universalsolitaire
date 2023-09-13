@@ -160,16 +160,19 @@ class kalisol(arcade.Window):
         # Get list of cards we've clicked on
         cards = arcade.get_sprites_at_point((x, y), self.card_list)
         if len(cards) > 0:
-            primary_card = cards[-1]  # Get the top card clicked on
-            pile_index = self.cards_pile(primary_card)  # Get the pile index of the clicked card
-            if primary_card == self.piles[pile_index][-1]:
-                # takes the top card, saves position, and Pulls to top
-                primary_card = cards[-1]
-                self.held_card = [primary_card]
-                self.held_card_og_position = [self.held_card[0].position]
-                self.pull_to_top(self.held_card[0])
-            #else:
-            #   print("ERROR - Non-Drawable Card")
+            primary_card = cards[-1]
+            pile_index = self.cards_pile(primary_card)
+
+            self.held_card = [primary_card]
+            self.held_card_og_position = [self.held_card[0].position]
+            self.pull_to_top(self.held_card[0])            
+
+            card_index = self.piles[pile_index].index(primary_card)
+            for i in range(card_index + 1, len(self.piles[pile_index])):
+                card = self.piles[pile_index][i]
+                self.held_card.append(card)
+                self.held_card_og_position = [card.position]
+                self.pull_to_top(card) 
 
     # Establishes the pile a card is in
     def cards_pile(self, card):
@@ -232,6 +235,7 @@ class kalisol(arcade.Window):
 
         # Releases the cards and returns to original location if invalid placement
         if reset_position:
+            print(self.held_card_og_position)
             for pile_index, card in enumerate(self.held_card):
                 card.position = self.held_card_og_position[pile_index]
 
@@ -250,6 +254,11 @@ class kalisol(arcade.Window):
         if symbol == arcade.key.R:
             print("Restarting... ")
             self.setup()
+    def on_key_press(self, symbol: int, modifiers: int):
+        if symbol == arcade.key.ESCAPE:
+            print("Returning Cards... ")
+            for pile_index, card in enumerate(self.held_card):
+                card.position = self.held_card_og_position[pile_index]
 
 # Card Sprite Class
 class Card(arcade.Sprite):
