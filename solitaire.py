@@ -190,8 +190,10 @@ class kalisol(arcade.Window):
 
     # Moves the card to a new pile
     def change_cards_pile(self, card, pile_index):
-        self.rm_cards_pile(card)                 
-        self.piles[pile_index].append(card)
+        current_pile = self.cards_pile(card)
+        if current_pile is not None:
+            self.rm_cards_pile(card)                 
+            self.piles[pile_index].append(card)
 
     def on_mouse_release(self, x: float, y: float, button: int, modifiers: int):
         # Ignore if no cards are held
