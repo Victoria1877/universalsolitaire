@@ -16,14 +16,15 @@ CARD_HEIGHT = 190 * CARD_SCALE
 
 # Constants for Sizing of mats for cards to be placed
 MAT_PERCENT_OVERSIZE = .35
-MAT_HEIGHT = int(CARD_HEIGHT * MAT_PERCENT_OVERSIZE)
+MAT_HEIGHT = int((CARD_HEIGHT * MAT_PERCENT_OVERSIZE) * 3)
+MAT_HEIGHTC = int(MAT_HEIGHT / 3)
 MAT_WIDTH = int(CARD_WIDTH * MAT_PERCENT_OVERSIZE)
 VERTICAL_MARGIN_PERCENT = 0.10
 HORIZONTAL_MARGIN_PERCENT = 0.10
 
 # Placement location of mats
-TOP_Y = SCREEN_HEIGHT - MAT_HEIGHT / 2 - MAT_HEIGHT * VERTICAL_MARGIN_PERCENT
-MIDDLE_Y = TOP_Y - MAT_HEIGHT - MAT_HEIGHT * VERTICAL_MARGIN_PERCENT
+TOP_Y = SCREEN_HEIGHT - MAT_HEIGHTC / 2 - MAT_HEIGHTC * VERTICAL_MARGIN_PERCENT - 5
+MIDDLE_Y = (TOP_Y - MAT_HEIGHTC - MAT_HEIGHTC * VERTICAL_MARGIN_PERCENT) /1.5
 MAT_SPACING = MAT_WIDTH + MAT_WIDTH * HORIZONTAL_MARGIN_PERCENT
 
 # Constants for making stacks on mats
@@ -47,9 +48,9 @@ CARD_VERTICAL_OFFSET = CARD_HEIGHT * (CARD_SCALE / 10) * 0.3
 
 # Constants for Locations
 top_right_x = SCREEN_WIDTH - MAT_WIDTH / 2 - MAT_WIDTH * HORIZONTAL_MARGIN_PERCENT
-top_right_y = SCREEN_HEIGHT - MAT_HEIGHT / 2 - MAT_HEIGHT * VERTICAL_MARGIN_PERCENT
-BOTTOM_Y = MAT_HEIGHT / 2 + MAT_HEIGHT * VERTICAL_MARGIN_PERCENT
-START_X = MAT_WIDTH / 2 + MAT_WIDTH * HORIZONTAL_MARGIN_PERCENT
+top_right_y = SCREEN_HEIGHT - MAT_HEIGHTC / 2 - MAT_HEIGHTC * VERTICAL_MARGIN_PERCENT
+BOTTOM_Y = MAT_HEIGHTC / 2 + MAT_HEIGHTC * VERTICAL_MARGIN_PERCENT - 5
+START_X = MAT_WIDTH / 2 + MAT_WIDTH * HORIZONTAL_MARGIN_PERCENT + 5
 
 # Card backend
 CARD_VALUES = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"]
@@ -68,6 +69,8 @@ class kalisol(arcade.Window):
         self.held_cards = None
         self.held_card_og_position = None
         self.piles = None
+        self.visual_mat_list = None
+        self.dmat_list = None
         
     # Sets up game, Call to restart
     def setup(self):
@@ -79,28 +82,52 @@ class kalisol(arcade.Window):
 
         # Setup for card mats
         self.pmat_list = arcade.SpriteList()
+        self.visual_mat_list = arcade.SpriteList()
+        self.dmat_list = arcade.SpriteList()
 
-        # Face Down mat
-        pile = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
+        #ACTUAL MAPS
+            # Face Down mat
+        pile = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHTC, arcade.csscolor.DARK_GREEN)
         pile.position = START_X, top_right_y
         self.pmat_list.append(pile)
 
-        # Face Up mats
-        pile = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
+            # Face Up mats
+        pile = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHTC, arcade.csscolor.DARK_GREEN)
         pile.position = START_X + MAT_SPACING, top_right_y
         self.pmat_list.append(pile)
 
-        # Seven active play mats
+            # Seven active play mats
         for i in range(7):
-            pile = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
-            pile.position = top_right_x - i * MAT_SPACING, MIDDLE_Y
+            pile = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHT, arcade.color.DARK_GREEN)
+            pile.position = top_right_x - i * MAT_SPACING - 10, MIDDLE_Y
             self.pmat_list.append(pile)
 
-        # Win criteria top mats
+            # Win criteria top mats
         for i in range(4):
-            pile = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
-            pile.position = top_right_x - i * MAT_SPACING, TOP_Y
+            pile = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHTC, arcade.color.DARK_GREEN)
+            pile.position = top_right_x - i * MAT_SPACING - 10, TOP_Y
             self.pmat_list.append(pile)
+
+        # VISUAL MATS 
+        visual_mat_list = arcade.SpriteList()
+        for i in range(7):
+            visual_mat = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHTC, arcade.csscolor.DARK_OLIVE_GREEN)
+            visual_mat.position = top_right_x - i * MAT_SPACING -10, MIDDLE_Y + 170
+            self.visual_mat_list.append(visual_mat)
+        for i in range(4):
+            visual_mat = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHTC, arcade.csscolor.DARK_OLIVE_GREEN)
+            visual_mat.position = top_right_x - i * MAT_SPACING - 10, TOP_Y
+            self.visual_mat_list.append(visual_mat)
+        # Face Down mat
+        visual_mat = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHTC, arcade.csscolor.DARK_OLIVE_GREEN)
+        visual_mat.position = START_X, top_right_y
+        self.visual_mat_list.append(visual_mat)
+
+        # Face Up mats
+        visual_mat = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHTC, arcade.csscolor.DARK_OLIVE_GREEN)
+        visual_mat.position = START_X + MAT_SPACING, top_right_y
+        self.visual_mat_list.append(visual_mat)
+
 
         # Sprite lists all cards regardless of pile
         self.card_list = arcade.SpriteList()
@@ -119,6 +146,8 @@ class kalisol(arcade.Window):
 
         # Create a list of lists, each holds a pile of cards.
         self.piles = [[] for _ in range(MAX_CARDS)]
+
+        
 
         # Put all the cards in the bottom face-down pile
         for card in self.card_list:
@@ -147,6 +176,8 @@ class kalisol(arcade.Window):
 
         # Draw the Mats
         self.pmat_list.draw()
+        self.visual_mat_list.draw()
+        self.dmat_list.draw()
 
         # Draw the Cards
         self.card_list.draw()
@@ -164,6 +195,7 @@ class kalisol(arcade.Window):
             pile_index = self.cards_pile(primary_card)
 
             self.held_card = [primary_card]
+            self.held_card_og_position = primary_card.position
             self.held_card_og_position = [self.held_card[0].position]
             self.pull_to_top(self.held_card[0])            
 
@@ -199,12 +231,18 @@ class kalisol(arcade.Window):
         # Ignore if no cards are held
         if len(self.held_card) == 0:
             return
+        
+        first_held = self.held_card[0].suit
+        print("Number of held cards:", len(self.held_card))
+        print("Number of positions in held_card_og_position:", len(self.held_card_og_position))
+
     
         # Finds nearest pile and checks if they are touching
         pile, distance = arcade.get_closest_sprite(self.held_card[0], self.pmat_list)
         reset_position = True
-    
         # Check for collision with a pile
+        pile_index = self.pmat_list.index(pile)
+
         if arcade.check_for_collision(self.held_card[0], pile):
             pile_index = self.pmat_list.index(pile)
         
@@ -214,13 +252,16 @@ class kalisol(arcade.Window):
         
             # Check for placement on bottom of stack
             elif STACK_PILE1 <= pile_index <= STACK_PILE7:
-                bottom_position = pile.center_y - CARD_VERTICAL_OFFSET * len(self.piles[pile_index])
+                bottom_position = (pile.center_y - CARD_VERTICAL_OFFSET * len(self.piles[pile_index])) + 170
                 for x, dropped_card in enumerate(self.held_card):
                     dropped_card.position = pile.center_x, bottom_position - CARD_VERTICAL_OFFSET * x
             
                 # Move the card to the bottom of the pile
                 for card in self.held_card:
                     self.change_cards_pile(card, pile_index)
+                
+                if first_held == "Diamonds":
+                    print("YES")
 
                 reset_position = False
         
@@ -234,12 +275,16 @@ class kalisol(arcade.Window):
                     self.change_cards_pile(card, pile_index)
 
                 reset_position = False
-
+        else:
+            print("wtf brian")
+            pass
+                
         # Releases the cards and returns to original location if invalid placement
         if reset_position:
             print(self.held_card_og_position)
             for pile_index, card in enumerate(self.held_card):
                 card.position = self.held_card_og_position[pile_index]
+           
 
         # Sets held card to null
         self.held_card = []
@@ -256,11 +301,12 @@ class kalisol(arcade.Window):
         if symbol == arcade.key.R:
             print("Restarting... ")
             self.setup()
-    def on_key_press(self, symbol: int, modifiers: int):
         if symbol == arcade.key.ESCAPE:
-            print("Returning Cards... ")
+            print("Returning Cards for Debug... ")
             for pile_index, card in enumerate(self.held_card):
-                card.position = self.held_card_og_position[pile_index]
+                card.position = 100, 100, 100
+                self.held_card = []
+                self.held_card_og_position = []
 
 # Card Sprite Class
 class Card(arcade.Sprite):
