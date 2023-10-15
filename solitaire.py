@@ -164,6 +164,9 @@ class kalisol(arcade.Window):
                 card.position = self.pmat_list[pile_no].position
                 self.pull_to_top(card)
 
+            # Flip up the top cards
+        for i in range(STACK_PILE1, STACK_PILE7 + 1):
+            self.piles[i][-1].face_up()
 
     def pull_to_top(self, card: arcade.Sprite):
         # Puts card on top of rendering order (appears last -> on top of other objects)
@@ -198,26 +201,58 @@ class kalisol(arcade.Window):
         self.border_width = min(width, height) * 0.02
         super().on_resize(width, height)
 
-    # X and Y coords of mouse clicks with key modifiers
     def on_mouse_press(self, x, y, button, key_modifiers):
-        # Get list of cards we've clicked on
         cards = arcade.get_sprites_at_point((x, y), self.card_list)
+
         if len(cards) > 0:
             primary_card = cards[-1]
+            assert isinstance(primary_card, Card)
+
+            # what pile card is in
             pile_index = self.cards_pile(primary_card)
 
-            self.held_card = [primary_card]
-            self.held_card_og_position = primary_card.position
-            self.held_card_og_position = [self.held_card[0].position]
-            self.pull_to_top(self.held_card[0])
-            print(primary_card.value)        
+            if pile_index == BOTTOM_FACE_DOWN_PILE:
+                for i in range(3):
+                    if len(self.piles[BOTTOM_FACE_DOWN_PILE]) == 0:
+                        break
+                    card = self.piles[BOTTOM_FACE_DOWN_PILE][-1]
+                    card.face_up()
+                    card.position = self.pmat_list[BOTTOM_FACE_UP_PILE].position
+                    self.piles[BOTTOM_FACE_DOWN_PILE].remove(card)
+                    self.piles[BOTTOM_FACE_UP_PILE].append(card)
+                    self.pull_to_top(card)
 
-            card_index = self.piles[pile_index].index(primary_card)
-            for i in range(card_index + 1, len(self.piles[pile_index])):
-                card = self.piles[pile_index][i]
-                self.held_card.append(card)
-                self.held_card_og_position = [card.position]
-                self.pull_to_top(card) 
+            elif primary_card.is_face_down:
+                primary_card.face_up()
+            else:
+                self.held_card = [primary_card]
+                self.held_card_og_position = [self.held_card[0].position]
+                self.pull_to_top(self.held_card[0])
+
+                card_index = self.piles[pile_index].index(primary_card)
+                for i in range(card_index + 1, len(self.piles[pile_index])):
+                    card = self.piles[pile_index][i]
+                    self.held_card.append(card)
+                    self.held_card_og_position.append(card.position)
+                    self.pull_to_top(card)
+
+        else:
+            mats = arcade.get_sprites_at_point((x, y), self.pmat_list)
+
+            if len(mats) > 0:
+                mat = mats[0]
+                mat_index = self.pmat_list.index(mat)
+
+                # Is it turned over draw pile
+                if mat_index == BOTTOM_FACE_DOWN_PILE and len(self.piles[BOTTOM_FACE_DOWN_PILE]) == 0:
+                    # Flip the deck back over
+                    temp_list = self.piles[BOTTOM_FACE_UP_PILE].copy()
+                    for card in reversed(temp_list):
+                        card.face_down()
+                        self.piles[BOTTOM_FACE_UP_PILE].remove(card)
+                        self.piles[BOTTOM_FACE_DOWN_PILE].append(card)
+                        card.position = self.pmat_list[BOTTOM_FACE_DOWN_PILE].position
+
 
     # Establishes the pile a card is in
     def cards_pile(self, card):
@@ -241,10 +276,7 @@ class kalisol(arcade.Window):
             self.piles[pile_index].append(card)
 
 
-    def on_mouse_release(self, x: float, y: float, button: int,
-                         modifiers: int):
-        """ Called when the user presses a mouse button. """
-
+    def on_mouse_release(self, x: float, y: float, button: int, modifiers: int):
         # If we don't have any cards, who cares
         if len(self.held_card) == 0:
             return
@@ -300,7 +332,7 @@ class kalisol(arcade.Window):
             # Where-ever we were dropped, it wasn't valid. Reset the each card's position
             # to its original spot.
             for pile_index, card in enumerate(self.held_card):
-                card.position = self.held_cards_original_position[pile_index]
+                card.position = self.held_card_og_position[pile_index]
 
         # We are no longer holding cards
         self.held_card = []
@@ -336,9 +368,22 @@ class Card(arcade.Sprite):
 
         # Image to use for the sprite when face up
         self.image_file_name = f"static/cards/card{self.suit}{self.value}.png"
+        self.is_face_up = False
 
         # Call the parent
-        super().__init__(self.image_file_name, scale, hit_box_algorithm="None")
+        super().__init__(CARDBACK, scale, hit_box_algorithm="None")
+
+    def face_down(self):
+        self.texture = arcade.load_texture(CARDBACK)
+        self.is_face_up = False
+    
+    def face_up(self):
+        self.texture = arcade.load_texture(self.image_file_name)
+        self.is_face_up = True
+
+    @property
+    def is_face_down(self):
+        return not self.is_face_up
 
 # The main program
 def main():
