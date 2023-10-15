@@ -51,9 +51,10 @@ top_right_x = SCREEN_WIDTH - MAT_WIDTH / 2 - MAT_WIDTH * HORIZONTAL_MARGIN_PERCE
 top_right_y = SCREEN_HEIGHT - MAT_HEIGHTC / 2 - MAT_HEIGHTC * VERTICAL_MARGIN_PERCENT
 BOTTOM_Y = MAT_HEIGHTC / 2 + MAT_HEIGHTC * VERTICAL_MARGIN_PERCENT - 5
 START_X = MAT_WIDTH / 2 + MAT_WIDTH * HORIZONTAL_MARGIN_PERCENT + 5
+PLAY_MAT_X = MAT_WIDTH / 2 + MAT_WIDTH * HORIZONTAL_MARGIN_PERCENT + 110
 
 # Card backend
-CARD_VALUES = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"]
+CARD_VALUES = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13"]
 CARD_SUITS = ["Clubs", "Hearts", "Spades", "Diamonds"]
 
 
@@ -99,7 +100,7 @@ class kalisol(arcade.Window):
             # Seven active play mats
         for i in range(7):
             pile = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHT, arcade.color.DARK_GREEN)
-            pile.position = top_right_x - i * MAT_SPACING - 10, MIDDLE_Y
+            pile.position = PLAY_MAT_X + i * MAT_SPACING -10, MIDDLE_Y + 170
             self.pmat_list.append(pile)
 
             # Win criteria top mats
@@ -112,7 +113,7 @@ class kalisol(arcade.Window):
         visual_mat_list = arcade.SpriteList()
         for i in range(7):
             visual_mat = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHTC, arcade.csscolor.DARK_OLIVE_GREEN)
-            visual_mat.position = top_right_x - i * MAT_SPACING -10, MIDDLE_Y + 170
+            visual_mat.position = PLAY_MAT_X + i * MAT_SPACING -10, MIDDLE_Y + 170
             self.visual_mat_list.append(visual_mat)
         for i in range(4):
             visual_mat = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHTC, arcade.csscolor.DARK_OLIVE_GREEN)
@@ -127,6 +128,7 @@ class kalisol(arcade.Window):
         visual_mat = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHTC, arcade.csscolor.DARK_OLIVE_GREEN)
         visual_mat.position = START_X + MAT_SPACING, top_right_y
         self.visual_mat_list.append(visual_mat)
+
 
 
         # Sprite lists all cards regardless of pile
@@ -147,11 +149,21 @@ class kalisol(arcade.Window):
         # Create a list of lists, each holds a pile of cards.
         self.piles = [[] for _ in range(MAX_CARDS)]
 
-        
-
         # Put all the cards in the bottom face-down pile
         for card in self.card_list:
-            self.piles[BOTTOM_FACE_DOWN_PILE].append(card)
+           self.piles[BOTTOM_FACE_DOWN_PILE].append(card)
+
+        for pile_no in range(STACK_PILE1, STACK_PILE7 + 1):
+
+            # Deal proper number of cards for that pile
+            for j in range(pile_no - STACK_PILE1 + 1):
+                card = self.piles[BOTTOM_FACE_DOWN_PILE].pop()
+                print("meow" + card.value + card.suit + " j " + str(j) + " pno " + str(pile_no))
+                self.piles[pile_no].append(card)
+
+                card.position = self.pmat_list[pile_no].position
+                self.pull_to_top(card)
+
 
     def pull_to_top(self, card: arcade.Sprite):
         # Puts card on top of rendering order (appears last -> on top of other objects)
@@ -197,7 +209,8 @@ class kalisol(arcade.Window):
             self.held_card = [primary_card]
             self.held_card_og_position = primary_card.position
             self.held_card_og_position = [self.held_card[0].position]
-            self.pull_to_top(self.held_card[0])            
+            self.pull_to_top(self.held_card[0])
+            print(primary_card.value)        
 
             card_index = self.piles[pile_index].index(primary_card)
             for i in range(card_index + 1, len(self.piles[pile_index])):
@@ -227,66 +240,69 @@ class kalisol(arcade.Window):
             self.rm_cards_pile(card)                 
             self.piles[pile_index].append(card)
 
-    def on_mouse_release(self, x: float, y: float, button: int, modifiers: int):
-        # Ignore if no cards are held
+
+    def on_mouse_release(self, x: float, y: float, button: int,
+                         modifiers: int):
+        """ Called when the user presses a mouse button. """
+
+        # If we don't have any cards, who cares
         if len(self.held_card) == 0:
             return
-        
-        first_held = self.held_card[0].suit
-        print("Number of held cards:", len(self.held_card))
-        print("Number of positions in held_card_og_position:", len(self.held_card_og_position))
 
-    
-        # Finds nearest pile and checks if they are touching
+        # Find the closest pile, in case we are in contact with more than one
         pile, distance = arcade.get_closest_sprite(self.held_card[0], self.pmat_list)
         reset_position = True
-        # Check for collision with a pile
-        pile_index = self.pmat_list.index(pile)
 
+        # See if we are in contact with the closest pile
         if arcade.check_for_collision(self.held_card[0], pile):
+
+            # What pile is it?
             pile_index = self.pmat_list.index(pile)
-        
-            # If it's the same pile as the original, do nothing
+
+            #  Is it the same pile we came from?
             if pile_index == self.cards_pile(self.held_card[0]):
-                pass
-        
-            # Check for placement on bottom of stack
+                    pass
+
+            # Is it on a middle play pile?
             elif STACK_PILE1 <= pile_index <= STACK_PILE7:
-                bottom_position = (pile.center_y - CARD_VERTICAL_OFFSET * len(self.piles[pile_index])) + 170
-                for x, dropped_card in enumerate(self.held_card):
-                    dropped_card.position = pile.center_x, bottom_position - CARD_VERTICAL_OFFSET * x
-            
-                # Move the card to the bottom of the pile
-                for card in self.held_card:
-                    self.change_cards_pile(card, pile_index)
-                
-                if first_held == "Diamonds":
-                    print("YES")
+                # Are there already cards there?
+                if len(self.piles[pile_index]) > 0:
+                    # Move cards to proper position
+                    top_card = self.piles[pile_index][-1]
+                    for i, dropped_card in enumerate(self.held_card):
+                        dropped_card.position = top_card.center_x, \
+                                                top_card.center_y - CARD_VERTICAL_OFFSET * (i + 1)
+                else:
+                    # Are there no cards in the middle play pile?
+                    for i, dropped_card in enumerate(self.held_card):
+                        # Move cards to proper position
+                        dropped_card.position = pile.center_x, \
+                                                pile.center_y - CARD_VERTICAL_OFFSET * i
 
-                reset_position = False
-        
-            # For placing on win pile
-            elif WIN_PILE_1 <= pile_index <= WIN_PILE_4:
-                for x, dropped_card in enumerate(self.held_card):
-                    dropped_card.position = pile.center_x, pile.center_y
-
-                # Move the card to the bottom of the pile
                 for card in self.held_card:
+                    # Cards are in the right position, but we need to move them to the right list
                     self.change_cards_pile(card, pile_index)
 
+                # Success, don't reset position of cards
                 reset_position = False
-        else:
-            print("wtf brian")
-            pass
-                
-        # Releases the cards and returns to original location if invalid placement
+
+            # Release on top play pile? And only one card held?
+            elif WIN_PILE_1 <= pile_index <= WIN_PILE_4 and len(self.held_card) == 1:
+                # Move position of card to pile
+                self.held_card[0].position = pile.position
+                # Move card to card list
+                for card in self.held_card:
+                    self.change_cards_pile(card, pile_index)
+
+                reset_position = False
+
         if reset_position:
-            print(self.held_card_og_position)
+            # Where-ever we were dropped, it wasn't valid. Reset the each card's position
+            # to its original spot.
             for pile_index, card in enumerate(self.held_card):
-                card.position = self.held_card_og_position[pile_index]
-           
+                card.position = self.held_cards_original_position[pile_index]
 
-        # Sets held card to null
+        # We are no longer holding cards
         self.held_card = []
 
 
