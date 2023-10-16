@@ -297,26 +297,43 @@ class kalisol(arcade.Window):
 
             # Is it on a middle play pile?
             elif STACK_PILE1 <= pile_index <= STACK_PILE7:
+
+                topCard = self.held_card[0]
+                topCardValue = int(topCard.value)
+                topCardSuit = topCard.suit
+
                 # Are there already cards there?
                 if len(self.piles[pile_index]) > 0:
-                    # Move cards to proper position
                     top_card = self.piles[pile_index][-1]
-                    for i, dropped_card in enumerate(self.held_card):
-                        dropped_card.position = top_card.center_x, \
-                                                top_card.center_y - CARD_VERTICAL_OFFSET * (i + 1)
+                    top_card_value = int(top_card.value)
+                    top_card_suit = str(top_card.suit)
+
+                    if top_card_value == topCardValue + 1:
+                        if (top_card_suit == "Hearts" or top_card_suit == "Diamonds") and (topCardSuit == "Clubs" or topCardSuit == "Spades"):
+                            for i, dropped_card in enumerate(self.held_card):
+                                dropped_card.position = top_card.center_x, top_card.center_y - CARD_VERTICAL_OFFSET * (i + 1)
+                            for card in self.held_card:
+                                self.change_cards_pile(card, pile_index)
+                            reset_position = False
+                        elif (topCardSuit == "Hearts" or topCardSuit == "Diamonds") and (top_card_suit == "Clubs" or top_card_suit == "Spades"):
+                            for i, dropped_card in enumerate(self.held_card):
+                                dropped_card.position = top_card.center_x, top_card.center_y - CARD_VERTICAL_OFFSET * (i + 1)
+                            for card in self.held_card:
+                                self.change_cards_pile(card, pile_index)
+                            reset_position = False
+                        else:
+                            pass
+                    else:
+                        pass
+
                 else:
                     # Are there no cards in the middle play pile?
-                    for i, dropped_card in enumerate(self.held_card):
-                        # Move cards to proper position
-                        dropped_card.position = pile.center_x, \
-                                                pile.center_y - CARD_VERTICAL_OFFSET * i
-
-                for card in self.held_card:
-                    # Cards are in the right position, but we need to move them to the right list
-                    self.change_cards_pile(card, pile_index)
-
-                # Success, don't reset position of cards
-                reset_position = False
+                    if topCardValue == 13:
+                        for i, dropped_card in enumerate(self.held_card):
+                            dropped_card.position = pile.center_x, pile.center_y - CARD_VERTICAL_OFFSET * i
+                        for card in self.held_card:
+                            self.change_cards_pile(card, pile_index)
+                        reset_position = False
 
             # Release on top play pile? And only one card held?
             elif WIN_PILE_1 <= pile_index <= WIN_PILE_4 and len(self.held_card) == 1:
@@ -361,8 +378,13 @@ class kalisol(arcade.Window):
         # We are no longer holding cards
         self.held_card = []
 
-## ADD CHECK AFTER MOUSE RELEASE TO FLIP BOTTOM CARD IN LIST ##
-
+        excluded_piles = [0, 1, 9, 10, 11, 12]
+        for mat_index, pile in enumerate(self.pmat_list):
+            if mat_index not in excluded_piles and self.piles[mat_index] and self.piles[mat_index][-1].is_face_down:
+                if self.piles[mat_index] and self.piles[mat_index][-1].is_face_down:
+                    self.piles[mat_index][-1].face_up()
+        else:
+            pass
 
     # When user moves the mouse
     def on_mouse_motion(self, x: float, y: float, dx: float, dy: float):
@@ -381,6 +403,7 @@ class kalisol(arcade.Window):
                 card.position = 100, 100, 100
                 self.held_card = []
                 self.held_card_og_position = []
+                self.rm_cards_pile(card)                 
 
 # Card Sprite Class
 class Card(arcade.Sprite):
