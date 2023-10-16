@@ -158,7 +158,7 @@ class kalisol(arcade.Window):
             # Deal proper number of cards for that pile
             for j in range(pile_no - STACK_PILE1 + 1):
                 card = self.piles[BOTTOM_FACE_DOWN_PILE].pop()
-                print("meow" + card.value + card.suit + " j " + str(j) + " pno " + str(pile_no))
+                # print("meow" + card.value + card.suit + " j " + str(j) + " pno " + str(pile_no))
                 self.piles[pile_no].append(card)
 
                 card.position = self.pmat_list[pile_no].position
@@ -320,13 +320,37 @@ class kalisol(arcade.Window):
 
             # Release on top play pile? And only one card held?
             elif WIN_PILE_1 <= pile_index <= WIN_PILE_4 and len(self.held_card) == 1:
-                # Move position of card to pile
-                self.held_card[0].position = pile.position
-                # Move card to card list
-                for card in self.held_card:
-                    self.change_cards_pile(card, pile_index)
+                topCard = self.held_card[0]
+                topCardValue = int(topCard.value)
+                topCardSuit = topCard.suit
+                print(topCardValue)
+                if len(self.piles[pile_index]) > 0:
 
-                reset_position = False
+                    wPileCard = self.piles[pile_index][-1]
+                    wPileCardValue = int(wPileCard.value)
+                    wPileCardSuit = wPileCard.suit
+                    print(wPileCard.value)
+
+                    if topCardValue == wPileCardValue + 1:
+                        if topCardSuit == wPileCardSuit:
+                            # Move position of card to pile
+                            self.held_card[0].position = pile.position
+                            # Move card to card list
+                            for card in self.held_card:
+                                self.change_cards_pile(card, pile_index)
+                            reset_position = False
+                        else:
+                            pass
+                    else:
+                        pass
+                else:
+                    if topCardValue==1:
+                        self.held_card[0].position = pile.position
+                        for card in self.held_card:
+                            self.change_cards_pile(card, pile_index)
+                        reset_position = False
+                    else:
+                        pass
 
         if reset_position:
             # Where-ever we were dropped, it wasn't valid. Reset the each card's position
@@ -336,6 +360,8 @@ class kalisol(arcade.Window):
 
         # We are no longer holding cards
         self.held_card = []
+
+## ADD CHECK AFTER MOUSE RELEASE TO FLIP BOTTOM CARD IN LIST ##
 
 
     # When user moves the mouse
