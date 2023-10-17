@@ -16,14 +16,15 @@ CARD_HEIGHT = 190 * CARD_SCALE
 
 # Constants for Sizing of mats for cards to be placed
 MAT_PERCENT_OVERSIZE = .35
-MAT_HEIGHT = int(CARD_HEIGHT * MAT_PERCENT_OVERSIZE)
+MAT_HEIGHT = int((CARD_HEIGHT * MAT_PERCENT_OVERSIZE) * 3)
+MAT_HEIGHTC = int(MAT_HEIGHT / 3)
 MAT_WIDTH = int(CARD_WIDTH * MAT_PERCENT_OVERSIZE)
 VERTICAL_MARGIN_PERCENT = 0.10
 HORIZONTAL_MARGIN_PERCENT = 0.10
 
 # Placement location of mats
-TOP_Y = SCREEN_HEIGHT - MAT_HEIGHT / 2 - MAT_HEIGHT * VERTICAL_MARGIN_PERCENT
-MIDDLE_Y = TOP_Y - MAT_HEIGHT - MAT_HEIGHT * VERTICAL_MARGIN_PERCENT
+TOP_Y = SCREEN_HEIGHT - MAT_HEIGHTC / 2 - MAT_HEIGHTC * VERTICAL_MARGIN_PERCENT - 5
+MIDDLE_Y = (TOP_Y - MAT_HEIGHTC - MAT_HEIGHTC * VERTICAL_MARGIN_PERCENT) /1.5
 MAT_SPACING = MAT_WIDTH + MAT_WIDTH * HORIZONTAL_MARGIN_PERCENT
 
 # Constants for making stacks on mats
@@ -41,18 +42,21 @@ WIN_PILE_1 = 9
 WIN_PILE_2 = 10
 WIN_PILE_3 = 11
 WIN_PILE_4 = 12
+DEBUG_PILE = 13
 
 # Distance of cards in stack
 CARD_VERTICAL_OFFSET = CARD_HEIGHT * (CARD_SCALE / 10) * 0.3
+CARD_HORIZONTAL_OFFSET = 0.1
 
 # Constants for Locations
 top_right_x = SCREEN_WIDTH - MAT_WIDTH / 2 - MAT_WIDTH * HORIZONTAL_MARGIN_PERCENT
-top_right_y = SCREEN_HEIGHT - MAT_HEIGHT / 2 - MAT_HEIGHT * VERTICAL_MARGIN_PERCENT
-BOTTOM_Y = MAT_HEIGHT / 2 + MAT_HEIGHT * VERTICAL_MARGIN_PERCENT
-START_X = MAT_WIDTH / 2 + MAT_WIDTH * HORIZONTAL_MARGIN_PERCENT
+top_right_y = SCREEN_HEIGHT - MAT_HEIGHTC / 2 - MAT_HEIGHTC * VERTICAL_MARGIN_PERCENT
+BOTTOM_Y = MAT_HEIGHTC / 2 + MAT_HEIGHTC * VERTICAL_MARGIN_PERCENT - 5
+START_X = MAT_WIDTH / 2 + MAT_WIDTH * HORIZONTAL_MARGIN_PERCENT + 5
+PLAY_MAT_X = MAT_WIDTH / 2 + MAT_WIDTH * HORIZONTAL_MARGIN_PERCENT + 110
 
 # Card backend
-CARD_VALUES = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"]
+CARD_VALUES = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13"]
 CARD_SUITS = ["Clubs", "Hearts", "Spades", "Diamonds"]
 
 
@@ -68,6 +72,8 @@ class kalisol(arcade.Window):
         self.held_cards = None
         self.held_card_og_position = None
         self.piles = None
+        self.visual_mat_list = None
+        self.dmat_list = None
         
     # Sets up game, Call to restart
     def setup(self):
@@ -79,28 +85,53 @@ class kalisol(arcade.Window):
 
         # Setup for card mats
         self.pmat_list = arcade.SpriteList()
+        self.visual_mat_list = arcade.SpriteList()
+        self.dmat_list = arcade.SpriteList()
 
-        # Face Down mat
-        pile = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
+        #ACTUAL MAPS
+            # Face Down mat
+        pile = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHTC, arcade.csscolor.DARK_GREEN)
         pile.position = START_X, top_right_y
         self.pmat_list.append(pile)
 
-        # Face Up mats
-        pile = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
+            # Face Up mats
+        pile = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHTC, arcade.csscolor.DARK_GREEN)
         pile.position = START_X + MAT_SPACING, top_right_y
         self.pmat_list.append(pile)
 
-        # Seven active play mats
+            # Seven active play mats
         for i in range(7):
-            pile = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
-            pile.position = top_right_x - i * MAT_SPACING, MIDDLE_Y
+            pile = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHT, arcade.color.DARK_GREEN)
+            pile.position = PLAY_MAT_X + i * MAT_SPACING -10, MIDDLE_Y + 170
             self.pmat_list.append(pile)
 
-        # Win criteria top mats
+            # Win criteria top mats
         for i in range(4):
-            pile = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
-            pile.position = top_right_x - i * MAT_SPACING, TOP_Y
+            pile = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHTC, arcade.color.DARK_GREEN)
+            pile.position = top_right_x - i * MAT_SPACING - 10, TOP_Y
             self.pmat_list.append(pile)
+
+        # VISUAL MATS 
+        visual_mat_list = arcade.SpriteList()
+        for i in range(7):
+            visual_mat = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHTC, arcade.csscolor.DARK_OLIVE_GREEN)
+            visual_mat.position = PLAY_MAT_X + i * MAT_SPACING -10, MIDDLE_Y + 170
+            self.visual_mat_list.append(visual_mat)
+        for i in range(4):
+            visual_mat = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHTC, arcade.csscolor.DARK_OLIVE_GREEN)
+            visual_mat.position = top_right_x - i * MAT_SPACING - 10, TOP_Y
+            self.visual_mat_list.append(visual_mat)
+        # Face Down mat
+        visual_mat = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHTC, arcade.csscolor.DARK_OLIVE_GREEN)
+        visual_mat.position = START_X, top_right_y
+        self.visual_mat_list.append(visual_mat)
+
+        # Face Up mats
+        visual_mat = arcade.SpriteSolidColor(190, MAT_HEIGHTC, arcade.csscolor.DARK_OLIVE_GREEN)
+        visual_mat.position = START_X + MAT_SPACING + 35, top_right_y
+        self.visual_mat_list.append(visual_mat)
+
+
 
         # Sprite lists all cards regardless of pile
         self.card_list = arcade.SpriteList()
@@ -122,7 +153,21 @@ class kalisol(arcade.Window):
 
         # Put all the cards in the bottom face-down pile
         for card in self.card_list:
-            self.piles[BOTTOM_FACE_DOWN_PILE].append(card)
+           self.piles[BOTTOM_FACE_DOWN_PILE].append(card)
+
+        for pile_no in range(STACK_PILE1, STACK_PILE7 + 1):
+
+            # Deal proper number of cards for that pile
+            for j in range(pile_no - STACK_PILE1 + 1):
+                card = self.piles[BOTTOM_FACE_DOWN_PILE].pop()
+                self.piles[pile_no].append(card)
+
+                card.position = self.pmat_list[pile_no].position
+                self.pull_to_top(card)
+
+            # Flip up the top cards
+        for i in range(STACK_PILE1, STACK_PILE7 + 1):
+            self.piles[i][-1].face_up()
 
     def pull_to_top(self, card: arcade.Sprite):
         # Puts card on top of rendering order (appears last -> on top of other objects)
@@ -147,6 +192,8 @@ class kalisol(arcade.Window):
 
         # Draw the Mats
         self.pmat_list.draw()
+        self.visual_mat_list.draw()
+        self.dmat_list.draw()
 
         # Draw the Cards
         self.card_list.draw()
@@ -155,24 +202,64 @@ class kalisol(arcade.Window):
         self.border_width = min(width, height) * 0.02
         super().on_resize(width, height)
 
-    # X and Y coords of mouse clicks with key modifiers
     def on_mouse_press(self, x, y, button, key_modifiers):
-        # Get list of cards we've clicked on
         cards = arcade.get_sprites_at_point((x, y), self.card_list)
+
         if len(cards) > 0:
             primary_card = cards[-1]
+            assert isinstance(primary_card, Card)
+
+            # what pile card is in
             pile_index = self.cards_pile(primary_card)
 
-            self.held_card = [primary_card]
-            self.held_card_og_position = [self.held_card[0].position]
-            self.pull_to_top(self.held_card[0])            
+            if pile_index == BOTTOM_FACE_DOWN_PILE:
+                num_cards_to_flip = min(3, len(self.piles[BOTTOM_FACE_DOWN_PILE]))
+                pile_x = self.pmat_list[BOTTOM_FACE_UP_PILE].position[0]
 
-            card_index = self.piles[pile_index].index(primary_card)
-            for i in range(card_index + 1, len(self.piles[pile_index])):
-                card = self.piles[pile_index][i]
-                self.held_card.append(card)
-                self.held_card_og_position = [card.position]
-                self.pull_to_top(card) 
+                for i in range(num_cards_to_flip):
+                    card = self.piles[BOTTOM_FACE_DOWN_PILE][-1]
+                    card.face_up()
+                    card.position = self.pmat_list[BOTTOM_FACE_UP_PILE].position
+
+                    # Offset each card vertically so they don't overlap
+                    card.position = (pile_x + i * (CARD_WIDTH * CARD_HORIZONTAL_OFFSET), self.pmat_list[BOTTOM_FACE_UP_PILE].position[1])
+
+                    self.piles[BOTTOM_FACE_DOWN_PILE].remove(card)
+                    self.piles[BOTTOM_FACE_UP_PILE].append(card)
+                    self.pull_to_top(card)
+
+
+            elif primary_card.is_face_down:
+                primary_card.face_up()
+            else:
+                self.held_card = [primary_card]
+                self.held_card_og_position = [self.held_card[0].position]
+                self.pull_to_top(self.held_card[0])
+
+                card_index = self.piles[pile_index].index(primary_card)
+                for i in range(card_index + 1, len(self.piles[pile_index])):
+                    card = self.piles[pile_index][i]
+                    self.held_card.append(card)
+                    self.held_card_og_position.append(card.position)
+                    self.pull_to_top(card)
+
+        else:
+            mats = arcade.get_sprites_at_point((x, y), self.pmat_list)
+
+            if len(mats) > 0:
+                mat = mats[0]
+                mat_index = self.pmat_list.index(mat)
+
+                # Is it turned over draw pile
+                if mat_index == BOTTOM_FACE_DOWN_PILE and len(self.piles[BOTTOM_FACE_DOWN_PILE]) == 0:
+                    # Flip the deck back over
+                    temp_list = self.piles[BOTTOM_FACE_UP_PILE].copy()
+                    for card in reversed(temp_list):
+                        card.face_down()
+                        self.piles[BOTTOM_FACE_UP_PILE].remove(card)
+                        self.piles[BOTTOM_FACE_DOWN_PILE].append(card)
+                        card.position = self.pmat_list[BOTTOM_FACE_DOWN_PILE].position
+
 
     # Establishes the pile a card is in
     def cards_pile(self, card):
@@ -195,54 +282,158 @@ class kalisol(arcade.Window):
             self.rm_cards_pile(card)                 
             self.piles[pile_index].append(card)
 
+
     def on_mouse_release(self, x: float, y: float, button: int, modifiers: int):
-        # Ignore if no cards are held
+        # If we don't have any cards, who cares
         if len(self.held_card) == 0:
             return
-    
-        # Finds nearest pile and checks if they are touching
+
+        # Find the closest pile, in case we are in contact with more than one
         pile, distance = arcade.get_closest_sprite(self.held_card[0], self.pmat_list)
         reset_position = True
-    
-        # Check for collision with a pile
+        originalPile = self.cards_pile(self.held_card[0])
+        print("original pile is: " + str(originalPile))
+
+        # See if we are in contact with the closest pile
         if arcade.check_for_collision(self.held_card[0], pile):
+
+            # What pile is it?
             pile_index = self.pmat_list.index(pile)
-        
-            # If it's the same pile as the original, do nothing
-            if pile_index == self.cards_pile(self.held_card[0]):
-                pass
-        
-            # Check for placement on bottom of stack
+
+            #  Is it the same pile we came from?
+            if pile_index == originalPile:
+                    pass
+
+            # Is it on a middle play pile?
             elif STACK_PILE1 <= pile_index <= STACK_PILE7:
-                bottom_position = pile.center_y - CARD_VERTICAL_OFFSET * len(self.piles[pile_index])
-                for x, dropped_card in enumerate(self.held_card):
-                    dropped_card.position = pile.center_x, bottom_position - CARD_VERTICAL_OFFSET * x
-            
-                # Move the card to the bottom of the pile
-                for card in self.held_card:
-                    self.change_cards_pile(card, pile_index)
 
-                reset_position = False
-        
-            # For placing on win pile
-            elif WIN_PILE_1 <= pile_index <= WIN_PILE_4:
-                for x, dropped_card in enumerate(self.held_card):
-                    dropped_card.position = pile.center_x, pile.center_y
+                topCard = self.held_card[0]
+                topCardValue = int(topCard.value)
+                topCardSuit = topCard.suit
 
-                # Move the card to the bottom of the pile
-                for card in self.held_card:
-                    self.change_cards_pile(card, pile_index)
+                # Are there already cards there?
+                if len(self.piles[pile_index]) > 0:
+                    top_card = self.piles[pile_index][-1]
+                    top_card_value = int(top_card.value)
+                    top_card_suit = str(top_card.suit)
 
-                reset_position = False
+                    if top_card_value == topCardValue + 1:
+                        if (top_card_suit == "Hearts" or top_card_suit == "Diamonds") and (topCardSuit == "Clubs" or topCardSuit == "Spades"):
+                            for i, dropped_card in enumerate(self.held_card):
+                                dropped_card.position = top_card.center_x, top_card.center_y - CARD_VERTICAL_OFFSET * (i + 1)
+                            for card in self.held_card:
+                                self.change_cards_pile(card, pile_index)
+                            reset_position = False
+                        elif (topCardSuit == "Hearts" or topCardSuit == "Diamonds") and (top_card_suit == "Clubs" or top_card_suit == "Spades"):
+                            for i, dropped_card in enumerate(self.held_card):
+                                dropped_card.position = top_card.center_x, top_card.center_y - CARD_VERTICAL_OFFSET * (i + 1)
+                            for card in self.held_card:
+                                self.change_cards_pile(card, pile_index)
+                            reset_position = False
+                        else:
+                            pass
+                    else:
+                        pass
 
-        # Releases the cards and returns to original location if invalid placement
+                else:
+                    # Are there no cards in the middle play pile?
+                    if topCardValue == 13:
+                        for i, dropped_card in enumerate(self.held_card):
+                            dropped_card.position = pile.center_x, pile.center_y - CARD_VERTICAL_OFFSET * i
+                        for card in self.held_card:
+                            self.change_cards_pile(card, pile_index)
+                        reset_position = False
+
+            # Release on top play pile? And only one card held?
+            elif WIN_PILE_1 <= pile_index <= WIN_PILE_4 and len(self.held_card) == 1:
+                topCard = self.held_card[0]
+                topCardValue = int(topCard.value)
+                topCardSuit = topCard.suit
+                if len(self.piles[pile_index]) > 0:
+
+                    wPileCard = self.piles[pile_index][-1]
+                    wPileCardValue = int(wPileCard.value)
+                    wPileCardSuit = wPileCard.suit
+
+                    if topCardValue == wPileCardValue + 1:
+                        if topCardSuit == wPileCardSuit:
+                            # Move position of card to pile
+                            self.held_card[0].position = pile.position
+                            # Move card to card list
+                            for card in self.held_card:
+                                self.change_cards_pile(card, pile_index)
+                            reset_position = False
+                        else:
+                            pass
+                    else:
+                        pass
+                else:
+                    if topCardValue==1:
+                        self.held_card[0].position = pile.position
+                        for card in self.held_card:
+                            self.change_cards_pile(card, pile_index)
+                        reset_position = False
+                    else:
+                        pass
+
         if reset_position:
-            print(self.held_card_og_position)
+            # Where-ever we were dropped, it wasn't valid. Reset the each card's position
+            # to its original spot.
             for pile_index, card in enumerate(self.held_card):
                 card.position = self.held_card_og_position[pile_index]
 
-        # Sets held card to null
+
+        print("originalPile:", originalPile)
+        print("reset_position:", reset_position)
+        print("len(self.piles[1]):", len(self.piles[1]))
+
+        if originalPile == 1 and reset_position == False     and len(self.piles[1]) > 3:
+                print("hi")
+                topThreeCards = [self.piles[1][-3], self.piles[1][-2], self.piles[1][-1]]
+                cards_to_move = [card for card in self.piles[1] if card not in topThreeCards]
+                for card in cards_to_move:
+                    self.rm_cards_pile(card)
+                    self.piles[1].append(card)
+
+                pile_x = self.pmat_list[BOTTOM_FACE_UP_PILE].position[0]
+                pile_y = self.pmat_list[BOTTOM_FACE_UP_PILE].position[1]
+
+                # Adjust the positions of the topThreeCards in the face-up pile
+                for i, card in enumerate(topThreeCards):
+                    print("apple")
+                    card.face_up()
+                    card.position = (pile_x + i * (CARD_WIDTH * CARD_HORIZONTAL_OFFSET), pile_y)
+                    self.piles[1].remove(card)
+                    self.piles[BOTTOM_FACE_UP_PILE].append(card)
+                    self.pull_to_top(card)
+
+        # We are no longer holding cards
         self.held_card = []
+
+        self.card_Flip()
+        self.winCheck()
+        
+    
+    def card_Flip(self):
+        excluded_piles = [0, 1, 9, 10, 11, 12, 13]
+        for mat_index, pile in enumerate(self.pmat_list):
+            if mat_index not in excluded_piles and self.piles[mat_index] and self.piles[mat_index][-1].is_face_down:
+                if self.piles[mat_index] and self.piles[mat_index][-1].is_face_down:
+                    self.piles[mat_index][-1].face_up()
+
+    def winCheck(self):
+        #winPiles = [9, 10, 11, 12]
+        #for mat_index in winPiles:
+            #print("aaa" + int(self.piles[9][-1].value))
+            if self.piles[9]:
+                if int(self.piles[9][-1].value) == 13:
+                    if self.piles[10]:
+                        if int(self.piles[10][-1].value) == 13:
+                            if self.piles[11]:
+                                if int(self.piles[11][-1].value) == 13:
+                                    if self.piles[12]:
+                                        if int(self.piles[12][-1].value) == 13:
+                                            print("YOU WINNNN")
 
 
     # When user moves the mouse
@@ -256,11 +447,12 @@ class kalisol(arcade.Window):
         if symbol == arcade.key.R:
             print("Restarting... ")
             self.setup()
-    def on_key_press(self, symbol: int, modifiers: int):
-        if symbol == arcade.key.ESCAPE:
-            print("Returning Cards... ")
-            for pile_index, card in enumerate(self.held_card):
-                card.position = self.held_card_og_position[pile_index]
+        # if symbol == arcade.key.ESCAPE:
+        #     print("Returning Cards for Debug... ")
+        #     for pile_index, card in enumerate(self.held_card):
+        #         card.position = 100, 100, 100
+        #         self.held_card = []
+        #         self.held_card_og_position = []
 
 # Card Sprite Class
 class Card(arcade.Sprite):
@@ -274,9 +466,22 @@ class Card(arcade.Sprite):
 
         # Image to use for the sprite when face up
         self.image_file_name = f"static/cards/card{self.suit}{self.value}.png"
+        self.is_face_up = False
 
         # Call the parent
-        super().__init__(self.image_file_name, scale, hit_box_algorithm="None")
+        super().__init__(CARDBACK, scale, hit_box_algorithm="None")
+
+    def face_down(self):
+        self.texture = arcade.load_texture(CARDBACK)
+        self.is_face_up = False
+    
+    def face_up(self):
+        self.texture = arcade.load_texture(self.image_file_name)
+        self.is_face_up = True
+
+    @property
+    def is_face_down(self):
+        return not self.is_face_up
 
 # The main program
 def main():
