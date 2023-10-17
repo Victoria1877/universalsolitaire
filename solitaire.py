@@ -42,9 +42,11 @@ WIN_PILE_1 = 9
 WIN_PILE_2 = 10
 WIN_PILE_3 = 11
 WIN_PILE_4 = 12
+DEBUG_PILE = 13
 
 # Distance of cards in stack
 CARD_VERTICAL_OFFSET = CARD_HEIGHT * (CARD_SCALE / 10) * 0.3
+CARD_HORIZONTAL_OFFSET = 0.1
 
 # Constants for Locations
 top_right_x = SCREEN_WIDTH - MAT_WIDTH / 2 - MAT_WIDTH * HORIZONTAL_MARGIN_PERCENT
@@ -125,8 +127,8 @@ class kalisol(arcade.Window):
         self.visual_mat_list.append(visual_mat)
 
         # Face Up mats
-        visual_mat = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHTC, arcade.csscolor.DARK_OLIVE_GREEN)
-        visual_mat.position = START_X + MAT_SPACING, top_right_y
+        visual_mat = arcade.SpriteSolidColor(190, MAT_HEIGHTC, arcade.csscolor.DARK_OLIVE_GREEN)
+        visual_mat.position = START_X + MAT_SPACING + 35, top_right_y
         self.visual_mat_list.append(visual_mat)
 
 
@@ -158,7 +160,6 @@ class kalisol(arcade.Window):
             # Deal proper number of cards for that pile
             for j in range(pile_no - STACK_PILE1 + 1):
                 card = self.piles[BOTTOM_FACE_DOWN_PILE].pop()
-                # print("meow" + card.value + card.suit + " j " + str(j) + " pno " + str(pile_no))
                 self.piles[pile_no].append(card)
 
                 card.position = self.pmat_list[pile_no].position
@@ -212,15 +213,21 @@ class kalisol(arcade.Window):
             pile_index = self.cards_pile(primary_card)
 
             if pile_index == BOTTOM_FACE_DOWN_PILE:
-                for i in range(3):
-                    if len(self.piles[BOTTOM_FACE_DOWN_PILE]) == 0:
-                        break
+                num_cards_to_flip = min(3, len(self.piles[BOTTOM_FACE_DOWN_PILE]))
+                pile_x = self.pmat_list[BOTTOM_FACE_UP_PILE].position[0]
+
+                for i in range(num_cards_to_flip):
                     card = self.piles[BOTTOM_FACE_DOWN_PILE][-1]
                     card.face_up()
                     card.position = self.pmat_list[BOTTOM_FACE_UP_PILE].position
+
+                    # Offset each card vertically so they don't overlap
+                    card.position = (pile_x + i * (CARD_WIDTH * CARD_HORIZONTAL_OFFSET), self.pmat_list[BOTTOM_FACE_UP_PILE].position[1])
+
                     self.piles[BOTTOM_FACE_DOWN_PILE].remove(card)
                     self.piles[BOTTOM_FACE_UP_PILE].append(card)
                     self.pull_to_top(card)
+
 
             elif primary_card.is_face_down:
                 primary_card.face_up()
@@ -284,6 +291,8 @@ class kalisol(arcade.Window):
         # Find the closest pile, in case we are in contact with more than one
         pile, distance = arcade.get_closest_sprite(self.held_card[0], self.pmat_list)
         reset_position = True
+        originalPile = self.cards_pile(self.held_card[0])
+        print("original pile is: " + str(originalPile))
 
         # See if we are in contact with the closest pile
         if arcade.check_for_collision(self.held_card[0], pile):
@@ -292,7 +301,7 @@ class kalisol(arcade.Window):
             pile_index = self.pmat_list.index(pile)
 
             #  Is it the same pile we came from?
-            if pile_index == self.cards_pile(self.held_card[0]):
+            if pile_index == originalPile:
                     pass
 
             # Is it on a middle play pile?
@@ -340,13 +349,11 @@ class kalisol(arcade.Window):
                 topCard = self.held_card[0]
                 topCardValue = int(topCard.value)
                 topCardSuit = topCard.suit
-                print(topCardValue)
                 if len(self.piles[pile_index]) > 0:
 
                     wPileCard = self.piles[pile_index][-1]
                     wPileCardValue = int(wPileCard.value)
                     wPileCardSuit = wPileCard.suit
-                    print(wPileCard.value)
 
                     if topCardValue == wPileCardValue + 1:
                         if topCardSuit == wPileCardSuit:
@@ -375,16 +382,59 @@ class kalisol(arcade.Window):
             for pile_index, card in enumerate(self.held_card):
                 card.position = self.held_card_og_position[pile_index]
 
+
+        print("originalPile:", originalPile)
+        print("reset_position:", reset_position)
+        print("len(self.piles[1]):", len(self.piles[1]))
+
+        if originalPile == 1 and reset_position == False     and len(self.piles[1]) > 3:
+                print("hi")
+                topThreeCards = [self.piles[1][-3], self.piles[1][-2], self.piles[1][-1]]
+                cards_to_move = [card for card in self.piles[1] if card not in topThreeCards]
+                for card in cards_to_move:
+                    self.rm_cards_pile(card)
+                    self.piles[1].append(card)
+
+                pile_x = self.pmat_list[BOTTOM_FACE_UP_PILE].position[0]
+                pile_y = self.pmat_list[BOTTOM_FACE_UP_PILE].position[1]
+
+                # Adjust the positions of the topThreeCards in the face-up pile
+                for i, card in enumerate(topThreeCards):
+                    print("apple")
+                    card.face_up()
+                    card.position = (pile_x + i * (CARD_WIDTH * CARD_HORIZONTAL_OFFSET), pile_y)
+                    self.piles[1].remove(card)
+                    self.piles[BOTTOM_FACE_UP_PILE].append(card)
+                    self.pull_to_top(card)
+
         # We are no longer holding cards
         self.held_card = []
 
-        excluded_piles = [0, 1, 9, 10, 11, 12]
+        self.card_Flip()
+        self.winCheck()
+        
+    
+    def card_Flip(self):
+        excluded_piles = [0, 1, 9, 10, 11, 12, 13]
         for mat_index, pile in enumerate(self.pmat_list):
             if mat_index not in excluded_piles and self.piles[mat_index] and self.piles[mat_index][-1].is_face_down:
                 if self.piles[mat_index] and self.piles[mat_index][-1].is_face_down:
                     self.piles[mat_index][-1].face_up()
-        else:
-            pass
+
+    def winCheck(self):
+        #winPiles = [9, 10, 11, 12]
+        #for mat_index in winPiles:
+            #print("aaa" + int(self.piles[9][-1].value))
+            if self.piles[9]:
+                if int(self.piles[9][-1].value) == 13:
+                    if self.piles[10]:
+                        if int(self.piles[10][-1].value) == 13:
+                            if self.piles[11]:
+                                if int(self.piles[11][-1].value) == 13:
+                                    if self.piles[12]:
+                                        if int(self.piles[12][-1].value) == 13:
+                                            print("YOU WINNNN")
+
 
     # When user moves the mouse
     def on_mouse_motion(self, x: float, y: float, dx: float, dy: float):
@@ -397,13 +447,12 @@ class kalisol(arcade.Window):
         if symbol == arcade.key.R:
             print("Restarting... ")
             self.setup()
-        if symbol == arcade.key.ESCAPE:
-            print("Returning Cards for Debug... ")
-            for pile_index, card in enumerate(self.held_card):
-                card.position = 100, 100, 100
-                self.held_card = []
-                self.held_card_og_position = []
-                self.rm_cards_pile(card)                 
+        # if symbol == arcade.key.ESCAPE:
+        #     print("Returning Cards for Debug... ")
+        #     for pile_index, card in enumerate(self.held_card):
+        #         card.position = 100, 100, 100
+        #         self.held_card = []
+        #         self.held_card_og_position = []
 
 # Card Sprite Class
 class Card(arcade.Sprite):
