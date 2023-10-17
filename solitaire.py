@@ -82,6 +82,7 @@ class kalisol(arcade.Window):
         # Sets variables of held card and original location to null
         self.held_card = []
         self.held_card_og_position = []
+        self.undoStack = []
 
         # Setup for card mats
         self.pmat_list = arcade.SpriteList()
@@ -135,6 +136,7 @@ class kalisol(arcade.Window):
 
         # Sprite lists all cards regardless of pile
         self.card_list = arcade.SpriteList()
+        self.cardList = []
 
         #   Create Each Card
         for card_suit in CARD_SUITS:
@@ -142,6 +144,7 @@ class kalisol(arcade.Window):
                 card = Card(card_suit, card_value, CARD_SCALE)
                 card.position = START_X, top_right_y
                 self.card_list.append(card)
+                self.cardList.append(card)
 
         # Shuffles the cards
         for pos1 in range(len(self.card_list)):
@@ -149,21 +152,22 @@ class kalisol(arcade.Window):
             self.card_list.swap(pos1, pos2)
 
         # Create a list of lists, each holds a pile of cards.
-        self.piles = [[] for _ in range(MAX_CARDS)]
+        self.piles = [[] for _ in range(MAX_CARDS)]            
 
         # Put all the cards in the bottom face-down pile
         for card in self.card_list:
            self.piles[BOTTOM_FACE_DOWN_PILE].append(card)
 
         for pile_no in range(STACK_PILE1, STACK_PILE7 + 1):
-
             # Deal proper number of cards for that pile
             for j in range(pile_no - STACK_PILE1 + 1):
                 card = self.piles[BOTTOM_FACE_DOWN_PILE].pop()
                 self.piles[pile_no].append(card)
 
-                card.position = self.pmat_list[pile_no].position
+                # Adjust the Y coordinate for vertical offset
+                card.position = (self.pmat_list[pile_no].position[0], self.pmat_list[pile_no].position[1] - j * CARD_VERTICAL_OFFSET)
                 self.pull_to_top(card)
+
 
             # Flip up the top cards
         for i in range(STACK_PILE1, STACK_PILE7 + 1):
@@ -382,11 +386,6 @@ class kalisol(arcade.Window):
             for pile_index, card in enumerate(self.held_card):
                 card.position = self.held_card_og_position[pile_index]
 
-
-        print("originalPile:", originalPile)
-        print("reset_position:", reset_position)
-        print("len(self.piles[1]):", len(self.piles[1]))
-
         if originalPile == 1 and reset_position == False     and len(self.piles[1]) > 3:
                 print("hi")
                 topThreeCards = [self.piles[1][-3], self.piles[1][-2], self.piles[1][-1]]
@@ -412,7 +411,7 @@ class kalisol(arcade.Window):
 
         self.card_Flip()
         self.winCheck()
-        
+        self.captureGameState()
     
     def card_Flip(self):
         excluded_piles = [0, 1, 9, 10, 11, 12, 13]
@@ -435,6 +434,16 @@ class kalisol(arcade.Window):
                                         if int(self.piles[12][-1].value) == 13:
                                             print("YOU WINNNN")
 
+    def captureGameState(self):
+        game_state = {
+            "piles": self.piles.copy(),
+            "cardList": self.cardList.copy(),
+        }
+    def undo(self):
+        if self.undoStack:
+            prev_game_state = self.undoStack.pop()
+            self.piles = prev_game_state["piles"]
+            self.cardList = prev_game_state["cardList"]
 
     # When user moves the mouse
     def on_mouse_motion(self, x: float, y: float, dx: float, dy: float):
@@ -447,12 +456,10 @@ class kalisol(arcade.Window):
         if symbol == arcade.key.R:
             print("Restarting... ")
             self.setup()
-        # if symbol == arcade.key.ESCAPE:
-        #     print("Returning Cards for Debug... ")
-        #     for pile_index, card in enumerate(self.held_card):
-        #         card.position = 100, 100, 100
-        #         self.held_card = []
-        #         self.held_card_og_position = []
+            
+        if symbol == arcade.key.Z:
+            print("Undo...")
+            self.undo()
 
 # Card Sprite Class
 class Card(arcade.Sprite):
