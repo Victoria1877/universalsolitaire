@@ -83,6 +83,7 @@ class kalisol(arcade.Window):
         self.held_card = []
         self.held_card_og_position = []
         self.undoStack = []
+        self.winConditionMet = False
 
         # Setup for card mats
         self.pmat_list = arcade.SpriteList()
@@ -180,27 +181,53 @@ class kalisol(arcade.Window):
 
     # Renders Screen
     def on_draw(self):
-        self.clear()
-        arcade.start_render()
-        arcade.set_background_color(arcade.color.DARK_GREEN)
+        if self.winConditionMet == False:
+            self.clear()
+            arcade.start_render()
+            arcade.set_background_color(arcade.color.DARK_GREEN)
 
-        # Draw a border around the window (X, Y, Width, Height, Colour, Width)
-        arcade.draw_rectangle_outline(
-            SCREEN_WIDTH / 2,
-            SCREEN_HEIGHT / 2,
-            self.width - self.border_width,
-            self.height - self.border_width,
-            arcade.color.GOLDEN_BROWN,  # Border color
-            border_width=self.border_width  # Border width
-        )
-
-        # Draw the Mats
-        self.pmat_list.draw()
-        self.visual_mat_list.draw()
-        self.dmat_list.draw()
-
-        # Draw the Cards
-        self.card_list.draw()
+            # Draw a border around the window (X, Y, Width, Height, Colour, Width)
+            arcade.draw_rectangle_outline(
+                SCREEN_WIDTH / 2,
+                SCREEN_HEIGHT / 2,
+                self.width - self.border_width,
+                self.height - self.border_width,
+                arcade.color.GOLDEN_BROWN,  # Border color
+                border_width=self.border_width  # Border width
+                )
+            # Draw the Mats and Cards
+            self.pmat_list.draw()
+            self.visual_mat_list.draw()
+            self.dmat_list.draw()
+            self.card_list.draw()
+        else:
+            arcade.start_render()
+            arcade.set_background_color(arcade.color.DARK_GREEN)
+            arcade.draw_text(
+                "Winner!",
+                400,
+                400,
+                arcade.color.WHITE,
+                50,
+                100
+            )
+            arcade.draw_text(
+                "Press N for new game!",
+                350,
+                300,
+                arcade.color.WHITE,
+                24,
+                100
+            )
+            arcade.draw_rectangle_outline(
+                SCREEN_WIDTH / 2,
+                SCREEN_HEIGHT / 2,
+                self.width - self.border_width,
+                self.height - self.border_width,
+                arcade.color.GOLDEN_BROWN,
+                border_width=self.border_width
+            )
+        
 
     def on_resize(self, width: float, height: float):
         self.border_width = min(width, height) * 0.02
@@ -234,7 +261,8 @@ class kalisol(arcade.Window):
 
 
             elif primary_card.is_face_down:
-                primary_card.face_up()
+                #primary_card.face_up()
+                pass
             else:
                 self.held_card = [primary_card]
                 self.held_card_og_position = [self.held_card[0].position]
@@ -296,7 +324,6 @@ class kalisol(arcade.Window):
         pile, distance = arcade.get_closest_sprite(self.held_card[0], self.pmat_list)
         reset_position = True
         originalPile = self.cards_pile(self.held_card[0])
-        print("original pile is: " + str(originalPile))
 
         # See if we are in contact with the closest pile
         if arcade.check_for_collision(self.held_card[0], pile):
@@ -387,7 +414,6 @@ class kalisol(arcade.Window):
                 card.position = self.held_card_og_position[pile_index]
 
         if originalPile == 1 and reset_position == False     and len(self.piles[1]) > 3:
-                print("hi")
                 topThreeCards = [self.piles[1][-3], self.piles[1][-2], self.piles[1][-1]]
                 cards_to_move = [card for card in self.piles[1] if card not in topThreeCards]
                 for card in cards_to_move:
@@ -399,7 +425,6 @@ class kalisol(arcade.Window):
 
                 # Adjust the positions of the topThreeCards in the face-up pile
                 for i, card in enumerate(topThreeCards):
-                    print("apple")
                     card.face_up()
                     card.position = (pile_x + i * (CARD_WIDTH * CARD_HORIZONTAL_OFFSET), pile_y)
                     self.piles[1].remove(card)
@@ -409,9 +434,10 @@ class kalisol(arcade.Window):
         # We are no longer holding cards
         self.held_card = []
 
-        self.card_Flip()
-        self.winCheck()
-        self.captureGameState()
+        if reset_position == False:
+            self.card_Flip()
+            self.winCheck()
+            self.captureGameState()
     
     def card_Flip(self):
         excluded_piles = [0, 1, 9, 10, 11, 12, 13]
@@ -433,17 +459,48 @@ class kalisol(arcade.Window):
                                     if self.piles[12]:
                                         if int(self.piles[12][-1].value) == 13:
                                             print("YOU WINNNN")
+                                            self.winConditionMet = True
 
     def captureGameState(self):
         game_state = {
             "piles": self.piles.copy(),
             "cardList": self.cardList.copy(),
         }
+        self.undoStack.append(game_state)
+
     def undo(self):
         if self.undoStack:
-            prev_game_state = self.undoStack.pop()
-            self.piles = prev_game_state["piles"]
-            self.cardList = prev_game_state["cardList"]
+            game_state = self.undoStack.pop()
+            self.piles = game_state["piles"]
+            cardList = game_state["cardList"]
+
+            # Clear the card_list
+            self.card_list = arcade.SpriteList()
+
+            for card in cardList:
+                self.card_list.append(card)
+                self.pull_to_top(card)
+            
+            for pile in self.piles:
+                pass
+            
+
+            # Update the rendering
+            self.clear()
+            arcade.start_render()
+            arcade.set_background_color(arcade.color.DARK_GREEN)
+            arcade.draw_rectangle_outline(
+                SCREEN_WIDTH / 2,
+                SCREEN_HEIGHT / 2,
+                self.width - self.border_width,
+                self.height - self.border_width,
+                arcade.color.GOLDEN_BROWN,
+                border_width=self.border_width
+            )
+            self.pmat_list.draw()
+            self.visual_mat_list.draw()
+            self.dmat_list.draw()
+            self.card_list.draw()
 
     # When user moves the mouse
     def on_mouse_motion(self, x: float, y: float, dx: float, dy: float):
@@ -454,12 +511,23 @@ class kalisol(arcade.Window):
     
     def on_key_press(self, symbol: int, modifiers: int):
         if symbol == arcade.key.R:
-            print("Restarting... ")
-            self.setup()
+            if self.winConditionMet == False:
+                print("Restarting... ")
+                self.setup()
             
         if symbol == arcade.key.Z:
             print("Undo...")
             self.undo()
+
+        if symbol == arcade.key.N:
+            if self.winConditionMet == True:
+                self.winConditionMet = False
+                self.setup()
+
+        if symbol == arcade.key.W:
+            print("WINNNNAARARGHH")
+            self.winConditionMet = True
+
 
 # Card Sprite Class
 class Card(arcade.Sprite):
